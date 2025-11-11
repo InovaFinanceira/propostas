@@ -9,6 +9,14 @@ export const getUserById = query({
   },
 });
 
+// Query interna para buscar usuário por ID (usada em actions)
+export const getUserByIdInternal = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    return ctx.db.get(args.userId);
+  },
+});
+
 // Query para buscar todos os usuários (para filtros e listagens) - VERSÃO ULTRA ROBUSTA
 export const getAllUsers = query({
   args: { requesterId: v.union(v.id("users"), v.null()) },

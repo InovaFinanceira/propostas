@@ -132,12 +132,54 @@ export const createUser = action({
 // Ação para deletar usuário
 export const deleteUser = action({
   args: {
-    userId: v.id("users"),
+    userIdToDelete: v.id("users"),
+    currentUserId: v.id("users"),
   },
   handler: async (ctx, args): Promise<void> => {
-    await ctx.runMutation(internal.users.deleteUserById, {
-      userIdToDelete: args.userId,
-    });
+    try {
+      console.log("🗑️ Deletando usuário:", args.userIdToDelete, "por:", args.currentUserId);
+
+      // Validar que o usuário atual existe e é ADMIN
+      const currentUser = await ctx.runQuery(internal.users.getUserByIdInternal, {
+        userId: args.currentUserId,
+      });
+
+      if (!currentUser) {
+        console.log("❌ Usuário atual não encontrado:", args.currentUserId);
+        throw new Error("Usuário não autenticado");
+      }
+
+      if (currentUser.role !== "ADMIN") {
+        console.log("❌ Usuário não é ADMIN:", args.currentUserId);
+        throw new Error("Apenas administradores podem excluir usuários");
+      }
+
+      // Validar que o usuário a ser deletado existe
+      const userToDelete = await ctx.runQuery(internal.users.getUserByIdInternal, {
+        userId: args.userIdToDelete,
+      });
+
+      if (!userToDelete) {
+        console.log("❌ Usuário a deletar não encontrado:", args.userIdToDelete);
+        throw new Error("Usuário não encontrado");
+      }
+
+      // Não permitir que um admin delete a si mesmo
+      if (args.userIdToDelete === args.currentUserId) {
+        console.log("❌ Tentativa de auto-exclusão:", args.currentUserId);
+        throw new Error("Você não pode excluir sua própria conta");
+      }
+
+      // Deletar o usuário
+      await ctx.runMutation(internal.users.deleteUserById, {
+        userIdToDelete: args.userIdToDelete,
+      });
+
+      console.log("✅ Usuário excluído com sucesso:", args.userIdToDelete);
+    } catch (error: any) {
+      console.error("❌ Erro ao deletar usuário:", error);
+      throw new Error(error.message || "Erro ao deletar usuário");
+    }
   },
 });
 
