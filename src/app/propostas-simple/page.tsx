@@ -111,7 +111,7 @@ function SimplePropostasContent() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                R$ {proposals ? proposals.reduce((sum, p) => sum + (p.totalValue || 0), 0).toLocaleString() : '...'}
+                R$ {proposals ? proposals.reduce((sum, p) => sum + (p.value || 0), 0).toLocaleString() : '...'}
               </div>
             </CardContent>
           </Card>
@@ -154,7 +154,7 @@ function SimplePropostasContent() {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold">
-                          R$ {(proposal.totalValue || 0).toLocaleString()}
+                          R$ {(proposal.value || 0).toLocaleString()}
                         </p>
                         <p className="text-sm text-gray-500">
                           {new Date(proposal.dateAdded).toLocaleDateString()}

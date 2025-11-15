@@ -131,7 +131,7 @@ export default function SimpleLoginPage() {
             Credenciais de teste:
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            contato@nobrecarautomoveis.com.br
+            contato@grupoinovafinanceira.com
           </p>
         </div>
       </div>

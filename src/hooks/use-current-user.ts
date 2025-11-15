@@ -55,8 +55,7 @@ export const useCurrentUser = () => {
 
   const currentUser = useQuery(
     api.users.getCurrentUser,
-    { userId },
-    { enabled: !!userId }
+    userId ? { userId } : "skip"
   );
 
   // Verifica se o usuário é válido

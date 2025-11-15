@@ -1,6 +1,10 @@
 import { v } from "convex/values";
-import { action } from "./_generated/server";
+import { action, mutation, internalQuery, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { ActionCtx } from "./_generated/server";
+import { getAllProposalsInternal } from "./proposals";
+import { updateProposal } from "./proposals";
+import { api } from "./_generated/api";
 
 // Action para migrar propostas existentes e popular brandName e modelName
 export const migrateProposalsWithNames = action({
@@ -39,9 +43,10 @@ export const migrateProposalsWithNames = action({
           
           if (foundModel) {
             // Atualiza a proposta com o nome do modelo
-            await ctx.db.patch(proposal._id, {
-              vehicleBrand: foundModel.nome,
-              vehicleModel: foundModel.nome
+            await ctx.runMutation(api.proposals.updateProposal, {
+              proposalId: proposal._id,
+              userId: proposal.salespersonId,
+              modelName: foundModel.nome
             });
             updatedCount++;
             console.log(`Atualizada proposta ${proposal.proposalNumber}: ${foundModel.nome}`);
@@ -61,24 +66,21 @@ export const migrateProposalsWithNames = action({
 });
 
 // Action para remover campos antigos obsoletos do banco de dados
-export const removeOldFields = action({
+export const removeOldFields = mutation({
   args: {},
   handler: async (ctx) => {
-    // Busca todas as propostas
-    const proposals = await ctx.runQuery(internal.proposals.getAllProposalsInternal);
+    const proposals = await ctx.db.query("proposals").collect();
 
     let updatedCount = 0;
     const fieldsToRemove = ['cpfCnpj', 'email', 'telefonePessoal', 'telefoneReferencia', 'cep', 'endereco', 'state'];
 
     for (const proposal of proposals) {
       try {
-        // Verifica se a proposta tem algum dos campos antigos
         const hasOldFields = fieldsToRemove.some(field =>
           proposal.hasOwnProperty(field) && proposal[field as keyof typeof proposal] !== undefined
         );
 
         if (hasOldFields) {
-          // Remove os campos antigos usando patch com undefined
           const updateData: any = {};
           fieldsToRemove.forEach(field => {
             if (proposal.hasOwnProperty(field)) {
@@ -105,52 +107,44 @@ export const removeOldFields = action({
 });
 
 // Action para adicionar campos da aba "Análise Bancária" às propostas existentes
-export const prepareBankAnalysisFields = action({
+export const prepareBankAnalysisFields = internalMutation({
   args: {},
   handler: async (ctx) => {
-    // Busca todas as propostas
-    const proposals = await ctx.runQuery(internal.proposals.getAllProposalsInternal);
-    
+    const proposals = await ctx.db.query("proposals").collect();
+
     let updatedCount = 0;
-    
-    // Campos da análise bancária que serão adicionados como null/undefined
     const bankFields = [
       'bancoBv', 'bancoSantander', 'bancoPan', 'bancoBradesco', 
       'bancoC6', 'bancoItau', 'bancoCash', 'bancoKunna', 
       'bancoViaCerta', 'bancoOmni', 'bancoDaycoval', 
       'bancoSim', 'bancoCreditas'
     ];
-    
+
     for (const proposal of proposals) {
       try {
-        // Verifica se a proposta já tem pelo menos um dos campos de análise bancária
         const hasAnyBankField = bankFields.some(field => 
           proposal.hasOwnProperty(field) && proposal[field as keyof typeof proposal] !== undefined
         );
-        
-        // Se não tiver nenhum campo, inicializa todos como undefined
-        // Isso é seguro e não afeta dados existentes, apenas prepara o documento
+
         if (!hasAnyBankField) {
           const updateData: any = {};
-          
-          // Define todos os campos como undefined (o Convex os tratará como campos opcionais)
           bankFields.forEach(field => {
             updateData[field] = undefined;
           });
-          
+
           await ctx.db.patch(proposal._id, updateData);
           updatedCount++;
           console.log(`Preparada proposta ${proposal.proposalNumber} para análise bancária`);
         }
-        
+
       } catch (error) {
         console.error(`Erro ao processar proposta ${proposal.proposalNumber}:`, error);
       }
     }
-    
+
     return {
       message: `Preparação concluída. ${updatedCount} propostas preparadas para a aba de análise bancária.`,
-      totalProposals: proposals.length
+      totalPropostas: proposals.length
     };
   },
 });

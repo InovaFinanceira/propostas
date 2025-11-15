@@ -4,72 +4,32 @@ import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
 
-// Nota: bcryptjs pode não estar disponível em ações do Convex
-// Usando comparação simples por enquanto
-async function hashPassword(password: string): Promise<string> {
-  // Retorna o hash como está (será melhorado depois)
-  return password;
-}
-
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  // Comparação simples por enquanto
-  return password === hash;
-}
-
-// Ação de login
+// Ação de login simplificada
 export const login = action({
   args: {
     email: v.string(),
     password: v.string(),
   },
   handler: async (ctx, args): Promise<{ userId: string }> => {
-    try {
-      console.log("🔐 Iniciando login para:", args.email);
+    console.log("🔐 Login:", args.email);
+    
+    const user = await ctx.runQuery(internal.users.getUserByEmail, {
+      email: args.email,
+    });
 
-      // Validar inputs
-      if (!args.email || !args.password) {
-        throw new Error("Email e senha são obrigatórios");
-      }
-
-      // Busca o usuário pelo email usando mutation interna
-      console.log("🔍 Buscando usuário com email:", args.email);
-      const user = await ctx.runMutation(internal.users.verifyLogin, {
-        email: args.email,
-        passwordHash: "" // Não precisa aqui, apenas para buscar
-      });
-
-      if (!user) {
-        console.log("❌ Usuário não encontrado:", args.email);
-        throw new Error("Usuário não encontrado");
-      }
-
-      console.log("✅ Usuário encontrado:", user._id);
-
-      // Verifica se o usuário tem passwordHash
-      if (!user.passwordHash) {
-        console.log("❌ Usuário sem passwordHash:", args.email);
-        throw new Error("Usuário não tem senha configurada");
-      }
-
-      // Verifica a senha usando bcrypt
-      console.log("🔑 Verificando senha...");
-      const isValidPassword = await verifyPassword(args.password, user.passwordHash);
-
-      if (!isValidPassword) {
-        console.log("❌ Senha incorreta para:", args.email);
-        throw new Error("Senha incorreta");
-      }
-
-      console.log("✅ Login bem-sucedido para:", args.email, "userId:", user._id);
-      return { userId: user._id };
-    } catch (error: any) {
-      console.error("❌ Erro ao fazer login:", error);
-      throw new Error(error.message || "Erro ao fazer login");
+    if (!user) {
+      throw new Error("Usuário não encontrado");
     }
+
+    if (user.passwordHash !== args.password) {
+      throw new Error("Senha incorreta");
+    }
+
+    return { userId: user._id };
   },
 });
 
-// Corrigir tipos explícitos e propriedades ausentes
+// Ação de criar usuário simplificada
 export const createUser = action({
   args: {
     name: v.string(),
@@ -77,109 +37,25 @@ export const createUser = action({
     password: v.string(),
     role: v.union(v.literal("ADMIN"), v.literal("USER")),
   },
-  handler: async (
-    ctx,
-    args: { name: string; email: string; password: string; role: "ADMIN" | "USER" }
-  ): Promise<{ userId: string }> => {
-    try {
-      console.log("👤 Criando novo usuário:", args.name, args.email);
+  handler: async (ctx, args): Promise<{ userId: string }> => {
+    console.log("👤 Criando usuário:", args.email);
 
-      // Validar inputs
-      if (!args.name || !args.email || !args.password) {
-        throw new Error("Nome, email e senha são obrigatórios");
-      }
+    const existingUser = await ctx.runQuery(internal.users.getUserByEmail, {
+      email: args.email,
+    });
 
-      // Validar formato do email
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(args.email)) {
-        throw new Error("Email inválido");
-      }
-
-      // Validar comprimento da senha
-      if (args.password.length < 6) {
-        throw new Error("Senha deve ter pelo menos 6 caracteres");
-      }
-
-      // Verificar se email já existe usando query interna
-      const existingUser = await ctx.runQuery(internal.users.getUserByEmail, {
-        email: args.email,
-      });
-
-      if (existingUser) {
-        console.log("❌ Email já existe:", args.email);
-        throw new Error(`Email ${args.email} já está registrado`);
-      }
-
-      const passwordHash: string = await hashPassword(args.password);
-
-      // Usa a mutation interna para criar o usuário
-      const userId = await ctx.runMutation(internal.users.insertUser, {
-        name: args.name,
-        email: args.email,
-        passwordHash: passwordHash,
-        role: args.role,
-      });
-
-      console.log("✅ Usuário criado com sucesso:", userId);
-      return { userId };
-    } catch (error: any) {
-      console.error("❌ Erro ao criar usuário:", error);
-      throw new Error(error.message || "Erro ao criar usuário");
+    if (existingUser) {
+      throw new Error("Email já registrado");
     }
-  },
-});
 
-// Ação para deletar usuário
-export const deleteUser = action({
-  args: {
-    userIdToDelete: v.id("users"),
-    currentUserId: v.id("users"),
-  },
-  handler: async (ctx, args): Promise<void> => {
-    try {
-      console.log("🗑️ Deletando usuário:", args.userIdToDelete, "por:", args.currentUserId);
+    const userId = await ctx.runMutation(internal.users.insertUser, {
+      name: args.name,
+      email: args.email,
+      passwordHash: args.password,
+      role: args.role,
+    });
 
-      // Validar que o usuário atual existe e é ADMIN
-      const currentUser = await ctx.runQuery(internal.users.getUserByIdInternal, {
-        userId: args.currentUserId,
-      });
-
-      if (!currentUser) {
-        console.log("❌ Usuário atual não encontrado:", args.currentUserId);
-        throw new Error("Usuário não autenticado");
-      }
-
-      if (currentUser.role !== "ADMIN") {
-        console.log("❌ Usuário não é ADMIN:", args.currentUserId);
-        throw new Error("Apenas administradores podem excluir usuários");
-      }
-
-      // Validar que o usuário a ser deletado existe
-      const userToDelete = await ctx.runQuery(internal.users.getUserByIdInternal, {
-        userId: args.userIdToDelete,
-      });
-
-      if (!userToDelete) {
-        console.log("❌ Usuário a deletar não encontrado:", args.userIdToDelete);
-        throw new Error("Usuário não encontrado");
-      }
-
-      // Não permitir que um admin delete a si mesmo
-      if (args.userIdToDelete === args.currentUserId) {
-        console.log("❌ Tentativa de auto-exclusão:", args.currentUserId);
-        throw new Error("Você não pode excluir sua própria conta");
-      }
-
-      // Deletar o usuário
-      await ctx.runMutation(internal.users.deleteUserById, {
-        userIdToDelete: args.userIdToDelete,
-      });
-
-      console.log("✅ Usuário excluído com sucesso:", args.userIdToDelete);
-    } catch (error: any) {
-      console.error("❌ Erro ao deletar usuário:", error);
-      throw new Error(error.message || "Erro ao deletar usuário");
-    }
+    return { userId };
   },
 });
 
@@ -194,6 +70,7 @@ export const updateUser = action({
     }),
   },
   handler: async (ctx, args): Promise<void> => {
+    console.log("✏️ Atualizando usuário:", args.userId);
     await ctx.runMutation(internal.users.updateUserById, {
       userIdToUpdate: args.userId,
       updates: args.updates,
@@ -201,45 +78,39 @@ export const updateUser = action({
   },
 });
 
-// Ação para resetar senha de um usuário (admin only)
-export const resetUserPassword = action({
+// Ação para deletar usuário
+export const deleteUser = action({
   args: {
-    email: v.string(),
-    newPassword: v.string(),
+    userIdToDelete: v.id("users"),
+    currentUserId: v.id("users"),
   },
-  handler: async (ctx, args): Promise<{ success: boolean }> => {
-    try {
-      console.log("🔄 Resetando senha para:", args.email);
+  handler: async (ctx, args): Promise<void> => {
+    console.log("🗑️ Deletando usuário:", args.userIdToDelete);
 
-      // Busca o usuário pelo email
-      const user = await ctx.runMutation(internal.users.verifyLogin, {
-        email: args.email,
-        passwordHash: ""
-      });
+    // Validar que o usuário atual existe e é ADMIN
+    const currentUser = await ctx.runQuery(internal.users.getUserByIdInternal, {
+      userId: args.currentUserId,
+    });
 
-      if (!user) {
-        console.log("❌ Usuário não encontrado:", args.email);
-        throw new Error("Usuário não encontrado");
-      }
-
-      console.log("✅ Usuário encontrado:", user._id);
-
-      // Gera o novo hash (texto plano por enquanto)
-      const newPasswordHash: string = await hashPassword(args.newPassword);
-
-      // Atualiza a senha
-      await ctx.runMutation(internal.users.updateUserById, {
-        userIdToUpdate: user._id,
-        updates: {
-          passwordHash: newPasswordHash,
-        },
-      });
-
-      console.log(`✅ Senha resetada para ${args.email}`);
-      return { success: true };
-    } catch (error: any) {
-      console.error("❌ Erro ao resetar senha:", error);
-      throw new Error(error.message || "Erro ao resetar senha");
+    if (!currentUser) {
+      throw new Error("Usuário não autenticado");
     }
+
+    if (currentUser.role !== "ADMIN") {
+      throw new Error("Apenas administradores podem excluir usuários");
+    }
+
+    // Não permitir que um admin delete a si mesmo
+    if (args.userIdToDelete === args.currentUserId) {
+      throw new Error("Você não pode excluir sua própria conta");
+    }
+
+    // Deletar o usuário
+    await ctx.runMutation(internal.users.deleteUserById, {
+      userIdToDelete: args.userIdToDelete,
+    });
+
+    console.log("✅ Usuário excluído com sucesso:", args.userIdToDelete);
   },
 });
+

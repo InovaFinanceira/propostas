@@ -25,7 +25,7 @@ export type UserFormData = z.infer<typeof formSchema>;
 // Component props
 type UserFormProps = {
   onSubmit: (data: UserFormData) => void;
-  initialData?: Doc<"users">;
+  initialData?: Partial<Doc<"users">> | { _id: string; name: string; email: string; role: 'ADMIN' | 'USER' };
   isSubmitting: boolean;
 };
 

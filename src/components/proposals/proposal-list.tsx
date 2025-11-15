@@ -19,10 +19,15 @@ import { api } from '../../../convex/_generated/api';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { Id } from '../../../convex/_generated/dataModel';
 
-type Proposal = ProposalFormData & {
+type Proposal = Omit<ProposalFormData, 'vehicleCondition' | 'status'> & {
   _id: Id<"proposals">;
+  _creationTime: number;
   proposalNumber: string;
   dateAdded: string;
+  vehicleCondition: string;
+  status: string;
+  salespersonId: Id<"users">;
+  createdBy?: { _id: Id<"users">; name: string; email: string } | null;
 };
 
 // Mapeamento de status para variantes de badge
@@ -111,7 +116,7 @@ export function ProposalList() {
                     ...data
                 });
 
-                // Extrair campos de análise bancária
+                // Extrair campos de análise bancária e campos que não devem ser enviados
                 const {
                   bancoBv,
                   bancoSantander,
@@ -126,8 +131,23 @@ export function ProposalList() {
                   bancoDaycoval,
                   bancoSim,
                   bancoCreditas,
+                  _creationTime,
+                  _id,
+                  proposalNumber,
+                  dateAdded,
+                  salespersonId,
+                  createdBy,
+                  proposalId,
+                  cpfCnpj,
+                  email,
+                  state,
+                  telefonePessoal,
+                  telefoneReferencia,
+                  endereco,
                   ...restData
-                } = data;
+                } = data as any;
+
+                console.log("📤 Dados filtrados para updateProposal:", restData);
 
                 // Atualizar dados gerais
                 await updateProposalMutation({
@@ -169,9 +189,18 @@ export function ProposalList() {
                     description: "A proposta foi atualizada com sucesso."
                 });
 
+                // Fechar diálogo e limpar estado
+                setIsDialogOpen(false);
+                setEditingProposal(null);
+
                 // Forçar atualização da lista
                 console.log("🔄 Forçando atualização da lista...");
                 forceRefresh();
+
+                // Aguardar um pouco e forçar reload da página para garantir atualização
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
             } else {
                 // Extrair campos de análise bancária para novas propostas
                 const {
@@ -196,6 +225,9 @@ export function ProposalList() {
                 // Cria nova proposta
                 const result = await createProposalMutation({
                     ...restData,
+                    isFinanced: restData.isFinanced ?? false,
+                    brandName: restData.brandName || '',
+                    modelName: restData.modelName || '',
                     userId: currentUser._id as Id<"users">
                 });
 
@@ -233,12 +265,13 @@ export function ProposalList() {
                     title: "Proposta Criada",
                     description: "A proposta foi criada com sucesso."
                 });
-            }
-            
-            setIsDialogOpen(false);
-            setEditingProposal(null);
 
-            console.log("✅ Dialog fechado, proposta editada com sucesso");
+                // Fechar diálogo e limpar estado
+                setIsDialogOpen(false);
+                setEditingProposal(null);
+
+                console.log("✅ Dialog fechado, proposta criada com sucesso");
+            }
         } catch (error: any) {
             console.error('❌ Erro ao salvar proposta:', error);
 
@@ -448,12 +481,12 @@ export function ProposalList() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Todos os usuários</SelectItem>
-                          {users?.map((user) => (
+                          {users && users.filter(u => u !== null).map((user) => (
                             <SelectItem key={user._id} value={user._id}>
                               <div className="flex items-center gap-2">
                                 <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
                                   <span className="text-xs font-medium text-primary">
-                                    {user.name.charAt(0).toUpperCase()}
+                                    {user.name?.charAt(0).toUpperCase()}
                                   </span>
                                 </div>
                                 {user.name}
@@ -510,7 +543,7 @@ export function ProposalList() {
                                             {proposal.proposalType === 'financing' ? 'Financ.' : 'Refinanc.'}
                                         </span>
                                     </TableCell>
-                                    <TableCell className="py-2 px-2">
+                                    <TableCell className="py-2 px-2 text-center">
                                         <div className="font-medium text-xs truncate">
                                             {proposal.tipoPessoa === 'fisica'
                                                 ? (proposal.nome || 'Não informado')
@@ -518,7 +551,7 @@ export function ProposalList() {
                                             }
                                         </div>
                                     </TableCell>
-                                    <TableCell className="py-2 px-2">
+                                    <TableCell className="py-2 px-2 text-center">
                                         <div className="space-y-0.5">
                                             <div className="font-medium text-xs truncate">{proposal.brandName || proposal.brand}</div>
                                             <div className="text-xs text-muted-foreground truncate">{proposal.modelName || proposal.model}</div>
@@ -547,12 +580,12 @@ export function ProposalList() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => handleEditClick(proposal)}>Editar</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleEditClick(proposal as any)}>Editar</DropdownMenuItem>
                                                 <AlertDialogTrigger asChild>
                                                     <DropdownMenuItem 
                                                         className="text-destructive focus:bg-destructive/90 focus:text-destructive-foreground"
                                                         onSelect={(e) => e.preventDefault()}
-                                                        onClick={() => handleDeleteClick(proposal)}
+                                                        onClick={() => handleDeleteClick(proposal as any)}
                                                     >
                                                         Excluir
                                                     </DropdownMenuItem>
@@ -579,7 +612,7 @@ export function ProposalList() {
                 <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                 <AlertDialogDescription>
                     Essa ação não pode ser desfeita. Isso excluirá permanentemente a proposta
-                    <span className="font-bold"> {proposalToDelete?.id}</span>.
+                    <span className="font-bold"> {proposalToDelete?.proposalNumber}</span>.
                 </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as createAdmin from "../createAdmin.js";
 import type * as migration from "../migration.js";
 import type * as proposals from "../proposals.js";
 import type * as userActions from "../userActions.js";
@@ -27,6 +28,7 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  createAdmin: typeof createAdmin;
   migration: typeof migration;
   proposals: typeof proposals;
   userActions: typeof userActions;

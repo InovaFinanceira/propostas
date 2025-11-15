@@ -1,0 +1,64 @@
+✔ Provisioned a dev deployment and saved its name as CONVEX_DEPLOYMENT to .env.local
+
+Write your Convex functions in convex\
+Give us feedback at https://convex.dev/community or support@convex.dev
+View the Convex dashboard at https://dashboard.convex.dev/d/vibrant-finch-226
+
+- Preparing Convex functions...
+
+[verbose] 2025-11-14T21:41:23.481Z Skipping non-JS file convex\README.md
+[verbose] 2025-11-14T21:41:23.482Z Skipping convex\_generated\api.d.ts
+[verbose] 2025-11-14T21:41:23.482Z Skipping convex\_generated\api.js
+[verbose] 2025-11-14T21:41:23.483Z Skipping convex\_generated\dataModel.d.ts
+[verbose] 2025-11-14T21:41:23.483Z Skipping convex\_generated\server.d.ts
+[verbose] 2025-11-14T21:41:23.483Z Skipping convex\_generated\server.js
+[verbose] 2025-11-14T21:41:23.483Z Preparing convex\createAdmin.ts
+[verbose] 2025-11-14T21:41:23.483Z Preparing convex\migration.ts
+[verbose] 2025-11-14T21:41:23.483Z Preparing convex\proposals.ts
+[verbose] 2025-11-14T21:41:23.483Z Skipping convex\schema.ts
+[verbose] 2025-11-14T21:41:23.483Z Skipping non-JS file convex\tsconfig.json
+[verbose] 2025-11-14T21:41:23.483Z Preparing convex\userActions.ts
+[verbose] 2025-11-14T21:41:23.483Z Skipping non-JS file convex\userActions.ts.backup
+[verbose] 2025-11-14T21:41:23.483Z Preparing convex\users.ts
+Codegen finished.
+[verbose] 2025-11-14T21:41:26.063Z Skipping non-JS file convex\README.md
+[verbose] 2025-11-14T21:41:26.063Z Skipping convex\_generated\api.d.ts
+[verbose] 2025-11-14T21:41:26.063Z Skipping convex\_generated\api.js
+[verbose] 2025-11-14T21:41:26.063Z Skipping convex\_generated\dataModel.d.ts
+[verbose] 2025-11-14T21:41:26.063Z Skipping convex\_generated\server.d.ts
+[verbose] 2025-11-14T21:41:26.063Z Skipping convex\_generated\server.js
+[verbose] 2025-11-14T21:41:26.063Z Preparing convex\createAdmin.ts
+[verbose] 2025-11-14T21:41:26.063Z Preparing convex\migration.ts
+[verbose] 2025-11-14T21:41:26.063Z Preparing convex\proposals.ts
+[verbose] 2025-11-14T21:41:26.063Z Skipping convex\schema.ts
+[verbose] 2025-11-14T21:41:26.063Z Skipping non-JS file convex\tsconfig.json
+[verbose] 2025-11-14T21:41:26.063Z Preparing convex\userActions.ts
+[verbose] 2025-11-14T21:41:26.063Z Skipping non-JS file convex\userActions.ts.backup
+[verbose] 2025-11-14T21:41:26.063Z Preparing convex\users.ts
+- Bundling modules for Convex's runtime...
+
+Convex's runtime modules:  [
+  'createAdmin.js',
+  'migration.js',
+  'proposals.js',
+  'users.js',
+  '_deps/XUMHVYZQ.js'
+]
+- Bundling modules for Node.js runtime...
+
+Node.js runtime modules:  [ 'userActions.js' ]
+✔ Schema validation complete.
+Downloading current deployment state...
+Diffing local code and deployment state
+Remote config will be overwritten with the following changes:
+Add the following modules:
+[+] createAdmin.js (2.4 KB, source map 5893)
+[+] migration.js (3.3 KB, source map 9324)
+[+] proposals.js (10.3 KB, source map 23916)
+[+] users.js (5.7 KB, source map 13921)
+[+] _deps/XUMHVYZQ.js (54.1 KB, source map 0)
+[+] userActions.js (36.3 KB, source map 161886)
+Change the server's function version:
+[+] 1.25.1
+
+Analyzing and deploying source code...

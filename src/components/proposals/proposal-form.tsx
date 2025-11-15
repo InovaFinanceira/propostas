@@ -837,12 +837,12 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
   // Função para recarregar lista completa de marcas (ao clicar no campo)
   const reloadBrandsForEditing = async () => {
     const currentVehicleType = form.getValues('vehicleType');
-    if (currentVehicleType && (currentVehicleType === 'car' || currentVehicleType === 'motorcycle' || currentVehicleType === 'truck' || currentVehicleType === 'bus')) {
-      const vehicleTypeMap = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
+    const vehicleTypeMap: Record<string, 'carros' | 'motos' | 'caminhoes'> = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
+    if (currentVehicleType && vehicleTypeMap[currentVehicleType]) {
       try {
         setIsEditingFipe(true); // Ativar modo edição
         setIsLoadingBrands(true);
-        const brandsData = await fetchBrands(vehicleTypeMap[currentVehicleType as keyof typeof vehicleTypeMap]);
+        const brandsData = await fetchBrands(vehicleTypeMap[currentVehicleType]);
         setBrands(brandsData);
         setFipeApiError(null);
       } catch (error) {
@@ -857,13 +857,13 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
   const reloadModelsForEditing = async () => {
     const currentVehicleType = form.getValues('vehicleType');
     const currentBrandCode = form.getValues('brand');
+    const vehicleTypeMap: Record<string, 'carros' | 'motos' | 'caminhoes'> = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
 
-    if (currentVehicleType && currentBrandCode && (currentVehicleType === 'car' || currentVehicleType === 'motorcycle' || currentVehicleType === 'truck' || currentVehicleType === 'bus')) {
-      const vehicleTypeMap = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
+    if (currentVehicleType && currentBrandCode && vehicleTypeMap[currentVehicleType]) {
       try {
         setIsEditingFipe(true); // Ativar modo edição
         setIsLoadingModels(true);
-        const modelsData = await fetchModels(vehicleTypeMap[currentVehicleType as keyof typeof vehicleTypeMap], currentBrandCode);
+        const modelsData = await fetchModels(vehicleTypeMap[currentVehicleType], currentBrandCode);
         setModels(modelsData);
         setFipeApiError(null);
       } catch (error) {
@@ -879,13 +879,13 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
     const currentVehicleType = form.getValues('vehicleType');
     const currentBrandCode = form.getValues('brand');
     const currentModelCode = form.getValues('model');
+    const vehicleTypeMap: Record<string, 'carros' | 'motos' | 'caminhoes'> = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
 
-    if (currentVehicleType && currentBrandCode && currentModelCode && (currentVehicleType === 'car' || currentVehicleType === 'motorcycle' || currentVehicleType === 'truck' || currentVehicleType === 'bus')) {
-      const vehicleTypeMap = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
+    if (currentVehicleType && currentBrandCode && currentModelCode && vehicleTypeMap[currentVehicleType]) {
       try {
         setIsEditingFipe(true); // Ativar modo edição
         setIsLoadingYears(true);
-        const yearsData = await fetchYears(vehicleTypeMap[currentVehicleType as keyof typeof vehicleTypeMap], currentBrandCode, currentModelCode);
+        const yearsData = await fetchYears(vehicleTypeMap[currentVehicleType], currentBrandCode, currentModelCode);
         setYears(yearsData);
         setFipeApiError(null);
       } catch (error) {
@@ -982,12 +982,13 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
       // Carregar dados da API FIPE se necessário e armazenar como originais
       if (initialData.vehicleType && initialData.brand) {
         const vehicleTypeMap = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
-        if (vehicleTypeMap[initialData.vehicleType as keyof typeof vehicleTypeMap]) {
+        const vehicleTypeMapLocal: Record<string, 'carros' | 'motos' | 'caminhoes'> = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
+        if (vehicleTypeMapLocal[initialData.vehicleType]) {
 
           const loadInitialFipeData = async () => {
             try {
               // Carregar marcas
-              const brandsData = await fetchBrands(vehicleTypeMap[initialData.vehicleType as keyof typeof vehicleTypeMap]);
+              const brandsData = await fetchBrands(vehicleTypeMapLocal[initialData.vehicleType]);
               setBrands(brandsData);
               const selectedBrand = brandsData.find(b => b.codigo === initialData.brand);
               if (selectedBrand) {
@@ -999,7 +1000,7 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
 
               // Carregar modelos se temos a marca
               if (initialData.model) {
-                modelsData = await fetchModels(vehicleTypeMap[initialData.vehicleType as keyof typeof vehicleTypeMap], initialData.brand);
+                modelsData = await fetchModels(vehicleTypeMapLocal[initialData.vehicleType], initialData.brand);
                 setModels(modelsData);
                 const selectedModel = modelsData.find(m => String(m.codigo) === initialData.model);
                 if (selectedModel) {
@@ -1007,7 +1008,7 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
                 }
 
                 // Carregar anos se temos modelo
-                yearsData = await fetchYears(vehicleTypeMap[initialData.vehicleType as keyof typeof vehicleTypeMap], initialData.brand, initialData.model);
+                yearsData = await fetchYears(vehicleTypeMapLocal[initialData.vehicleType], initialData.brand, initialData.model);
                 setYears(yearsData);
               }
 
@@ -1044,24 +1045,15 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
 
 
 
-  // Limpar ano de fabricação quando ano do modelo mudar
-  useEffect(() => {
-    const modelYear = form.watch('modelYear');
-    if (modelYear) {
-      // Limpar o ano de fabricação para forçar nova seleção
-      form.setValue('manufactureYear', undefined);
-    }
-  }, [form.watch('modelYear')]);
-
   // Fetch Brands
   useEffect(() => {
     // NÃO executar se usuário está editando campos FIPE ativamente
     if (isEditingFipe) return;
 
-    if (vehicleType && (vehicleType === 'car' || vehicleType === 'motorcycle' || vehicleType === 'truck' || vehicleType === 'bus')) {
-      const vehicleTypeMap = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
+    const vehicleTypeMap: Record<string, 'carros' | 'motos' | 'caminhoes'> = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
+    if (vehicleType && vehicleTypeMap[vehicleType]) {
       setIsLoadingBrands(true);
-      fetchBrands(vehicleTypeMap[vehicleType as keyof typeof vehicleTypeMap])
+      fetchBrands(vehicleTypeMap[vehicleType])
         .then(data => {
           setBrands(data);
           setFipeApiError(null); // Limpar erro se sucesso
@@ -1094,10 +1086,10 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
     // NÃO executar se usuário está editando campos FIPE ativamente
     if (isEditingFipe) return;
 
-    if (brandCode && vehicleType && (vehicleType === 'car' || vehicleType === 'motorcycle' || vehicleType === 'truck' || vehicleType === 'bus')) {
-      const vehicleTypeMap = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
+    const vehicleTypeMap: Record<string, 'carros' | 'motos' | 'caminhoes'> = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
+    if (brandCode && vehicleType && vehicleTypeMap[vehicleType]) {
       setIsLoadingModels(true);
-      fetchModels(vehicleTypeMap[vehicleType as keyof typeof vehicleTypeMap], brandCode)
+      fetchModels(vehicleTypeMap[vehicleType], brandCode)
         .then(data => {
           setModels(data)
           if (initialData?.model) {
@@ -1120,10 +1112,10 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
 
   // Fetch Years
   useEffect(() => {
-    if (modelCode && brandCode && vehicleType && (vehicleType === 'car' || vehicleType === 'motorcycle' || vehicleType === 'truck' || vehicleType === 'bus')) {
-      const vehicleTypeMap = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
+    const vehicleTypeMap: Record<string, 'carros' | 'motos' | 'caminhoes'> = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
+    if (modelCode && brandCode && vehicleType && vehicleTypeMap[vehicleType]) {
       setIsLoadingYears(true);
-      fetchYears(vehicleTypeMap[vehicleType as keyof typeof vehicleTypeMap], brandCode, modelCode)
+      fetchYears(vehicleTypeMap[vehicleType], brandCode, modelCode)
         .then(data => {
           setYears(data);
           // Preservar o valor do modelYear se estivermos editando
@@ -1152,10 +1144,10 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
 
   // Fetch FIPE Details
   useEffect(() => {
-    if (yearCodeFipe && modelCode && brandCode && vehicleType && (vehicleType === 'car' || vehicleType === 'motorcycle' || vehicleType === 'truck' || vehicleType === 'bus')) {
-      const vehicleTypeMap = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
+    const vehicleTypeMap: Record<string, 'carros' | 'motos' | 'caminhoes'> = { car: 'carros', motorcycle: 'motos', truck: 'caminhoes', bus: 'caminhoes' };
+    if (yearCodeFipe && modelCode && brandCode && vehicleType && vehicleTypeMap[vehicleType]) {
       setIsLoadingFipe(true);
-      fetchVehicleDetails(vehicleTypeMap[vehicleType as keyof typeof vehicleTypeMap], brandCode, modelCode, yearCodeFipe)
+      fetchVehicleDetails(vehicleTypeMap[vehicleType], brandCode, modelCode, yearCodeFipe)
         .then(data => setFipeDetails(data))
         .catch(err => toast({ title: 'Erro FIPE', description: 'Não foi possível buscar os detalhes do veículo.', variant: 'destructive' }))
         .finally(() => setIsLoadingFipe(false));
@@ -1176,7 +1168,10 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
     const modelYear = form.watch('modelYear');
     if (!modelYear) return [];
 
-    const modelYearNum = parseInt(modelYear);
+    // Extrair apenas o ano (antes do hífen se houver)
+    const yearStr = String(modelYear).split('-')[0];
+    const modelYearNum = parseInt(yearStr);
+
     if (isNaN(modelYearNum)) return [];
 
     return [
@@ -1189,7 +1184,11 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
   const handleSubmitWithValidation = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validação básica dos campos obrigatórios
+    console.log("🚀 handleSubmitWithValidation CHAMADO!");
+    console.log("📝 initialData existe?", !!initialData);
+    console.log("📝 Dados do formulário:", form.getValues());
+
+    // Validação básica dos campos obrigatórios (para NOVA e EDIÇÃO)
     let hasErrors = false;
     let formatErrors = false;
 
@@ -1235,9 +1234,10 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
         { field: 'cpfPF', message: 'CPF é obrigatório.' },
         { field: 'emailPF', message: 'E-mail é obrigatório.' },
         { field: 'telefonePessoalPF', message: 'Telefone pessoal é obrigatório.' },
-        { field: 'telefoneReferenciaPF', message: 'Telefone de referência é obrigatório.' },
+        // telefoneReferenciaPF é OPCIONAL
         { field: 'cepPF', message: 'CEP é obrigatório.' },
         { field: 'enderecoPF', message: 'Endereço é obrigatório.' },
+        { field: 'numeroPF', message: 'Número é obrigatório.' },
         { field: 'nome', message: 'Nome completo é obrigatório.' },
         { field: 'dataNascimento', message: 'Data de nascimento é obrigatória.' },
         { field: 'sexo', message: 'Sexo é obrigatório.' },
@@ -1250,7 +1250,11 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
         { field: 'estadoCivil', message: 'Estado civil é obrigatório.' },
         { field: 'possuiCnh', message: 'Informe se possui CNH.' },
         { field: 'naturezaOcupacao', message: 'Natureza da ocupação é obrigatória.' },
-        { field: 'cargo', message: 'Cargo é obrigatório.' }
+        { field: 'cargo', message: 'Cargo é obrigatório.' },
+        { field: 'empresa', message: 'Empresa é obrigatória.' }
+        // referenciaPF é OPCIONAL
+        // observacoesPF é OPCIONAL
+        // comentariosPF é OPCIONAL
       ];
 
       camposPF.forEach(({ field, message }) => {
@@ -1309,11 +1313,15 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
         { field: 'cnpjPJ', message: 'CNPJ é obrigatório.' },
         { field: 'emailPJ', message: 'E-mail é obrigatório.' },
         { field: 'telefonePessoalPJ', message: 'Telefone comercial é obrigatório.' },
-        { field: 'telefoneReferenciaPJ', message: 'Telefone de referência é obrigatório.' },
+        // telefoneReferenciaPJ é OPCIONAL
         { field: 'cepPJ', message: 'CEP é obrigatório.' },
         { field: 'enderecoPJ', message: 'Endereço é obrigatório.' },
+        { field: 'numeroPJ', message: 'Número é obrigatório.' },
         { field: 'razaoSocial', message: 'Razão social é obrigatória.' },
         { field: 'nomeFantasia', message: 'Nome fantasia é obrigatório.' }
+        // referenciaPJ é OPCIONAL
+        // observacoesPJ é OPCIONAL
+        // comentariosPJ é OPCIONAL
       ];
 
       camposPJ.forEach(({ field, message }) => {
@@ -1402,11 +1410,23 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
       return;
     }
 
-    // Se passou na validação, executar o submit normal
-    form.handleSubmit(handleFormSubmit)();
+    // Se passou na validação
+    if (initialData) {
+      // Para edição: chamar handleFormSubmit diretamente (sem schema Zod)
+      console.log("🔄 Modo edição: chamando handleFormSubmit diretamente após validação");
+      const values = form.getValues();
+      await handleFormSubmit(values as any);
+    } else {
+      // Para nova proposta: usar validação completa do schema Zod
+      console.log("🆕 Modo criação: usando validação completa do schema Zod");
+      form.handleSubmit(handleFormSubmit)();
+    }
   };
 
   async function handleFormSubmit(values: z.infer<typeof formSchema>) {
+    console.log("🎯 handleFormSubmit CHAMADO!");
+    console.log("📦 Values recebidos:", values);
+
     setIsSubmitting(true);
 
     try {
@@ -1420,8 +1440,12 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
         modelName: selectedModel?.nome || modelName || '',
       };
 
+      console.log("📤 Chamando onSubmit com:", submissionValues);
+
       // Aguarda a conclusão da operação
       await onSubmit(submissionValues);
+
+      console.log("✅ onSubmit completado com sucesso!");
 
     } catch (error) {
       console.error('❌ Error in form submission:', error);
@@ -1432,6 +1456,7 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
       });
     } finally {
       setIsSubmitting(false);
+      console.log("🏁 handleFormSubmit finalizado");
     }
   }
 
@@ -1454,7 +1479,7 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
   return (
     <>
     <div className="w-full">
-      <Tabs value={tabValue} onValueChange={setTabValue} className="w-full">
+      <Tabs value={tabValue} onValueChange={(value) => setTabValue(value as 'veiculo' | 'pessoais' | 'bancaria')} className="w-full">
         <TabsList className="mb-6 w-full grid grid-cols-1 sm:grid-cols-3 h-auto sm:h-10">
           <TabsTrigger value="veiculo" className="text-xs sm:text-sm">Dados do Veículo</TabsTrigger>
           <TabsTrigger value="pessoais" className="text-xs sm:text-sm">Dados Pessoais</TabsTrigger>
@@ -1601,7 +1626,7 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
                       <Select
                           onValueChange={(value) => {
                             field.onChange(value);
-                            const selectedModel = models.find(m => m.codigo === value);
+                            const selectedModel = models.find(m => String(m.codigo) === value);
                             setModelName(selectedModel ? selectedModel.nome : null);
 
                             // Limpar campos dependentes quando modelo muda
@@ -2243,8 +2268,8 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
                 </div>
               </>}
               {/* Campos comuns */}
+              {tipoPessoa === 'fisica' && (
               <FormField control={form.control} name="emailPF" render={({ field }) => (
-                tipoPessoa === 'fisica' ? (
                   <FormItem>
                     <FormLabel>E-mail</FormLabel>
                     <FormControl>
@@ -2252,8 +2277,8 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
                     </FormControl>
                     <FormMessage />
                   </FormItem>
-                ) : null
               )}/>
+              )}
 
               {/* Telefones apenas para pessoa física */}
               {tipoPessoa === 'fisica' && <>
@@ -2389,8 +2414,8 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
               )}
 
               {/* Campo CNH logo após CPF */}
+              {tipoPessoa === 'fisica' && (
               <FormField control={form.control} name="possuiCnh" render={({ field }) => (
-                tipoPessoa === 'fisica' ? (
                   <FormItem>
                     <FormLabel>Possui CNH?</FormLabel>
                     <Select onValueChange={(value) => field.onChange(value === 'true')} value={field.value === undefined ? '' : field.value ? 'true' : 'false'}>
@@ -2406,11 +2431,11 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
                     </Select>
                     <FormMessage />
                   </FormItem>
-                ) : null
               )}/>
+              )}
 
+              {tipoPessoa === 'fisica' && (
               <FormField control={form.control} name="naturalidade" render={({ field }) => (
-                tipoPessoa === 'fisica' ? (
                   <FormItem>
                     <FormLabel>Naturalidade</FormLabel>
                     <FormControl>
@@ -2418,10 +2443,10 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
                     </FormControl>
                     <FormMessage />
                   </FormItem>
-                ) : null
               )}/>
+              )}
+              {tipoPessoa === 'fisica' && (
               <FormField control={form.control} name="estadoCivil" render={({ field }) => (
-                tipoPessoa === 'fisica' ? (
                   <>
                     <FormItem>
                       <FormLabel>Estado Civil</FormLabel>
@@ -2607,8 +2632,8 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
                       )}/>
                     </div>
                   </>
-                ) : null
               )}/>
+              )}
 
             </div>
             <div className="flex flex-col sm:flex-row justify-between mt-8 gap-3">

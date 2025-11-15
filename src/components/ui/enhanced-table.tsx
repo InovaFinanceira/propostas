@@ -64,7 +64,7 @@ export function UserCell({ user, size = 'md' }: UserCellProps) {
 // 🏷️ COMPONENTE DE BADGE DE TIPO PADRONIZADO
 interface TypeBadgeProps {
   type: string;
-  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+  variant?: 'default' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
 }
 
 export function TypeBadge({ type, variant = 'info' }: TypeBadgeProps) {
@@ -72,7 +72,7 @@ export function TypeBadge({ type, variant = 'info' }: TypeBadgeProps) {
     <span className={cn(
       'inline-block px-2 py-1 rounded-md font-medium',
       BADGE.size.md,
-      BADGE.variant[variant]
+      BADGE.variant[variant as keyof typeof BADGE.variant]
     )}>
       {type}
     </span>

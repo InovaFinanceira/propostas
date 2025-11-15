@@ -15,11 +15,11 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 px-4 sm:px-6 shadow-sm">
       <Link href="/propostas">
-          <Image 
-            src="/logo.png" 
-            alt="Nobrecar Automóveis Logo" 
-            width={180} 
-            height={60} 
+          <Image
+            src="/logo.png"
+            alt="Grupo Inova Financeira Logo"
+            width={65}
+            height={22}
           />
       </Link>
 
