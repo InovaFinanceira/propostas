@@ -41,13 +41,8 @@ export interface VehicleDetails {
 // Configuração da API FIPE v2 com suporte a token
 const FIPE_API_BASE_URL = 'https://fipe.parallelum.com.br/api/v2';
 
-// Token FIPE carregado do Vercel (funcionando!)
+// Token FIPE carregado do Vercel (opcional)
 const FIPE_TOKEN = process.env.NEXT_PUBLIC_FIPE_TOKEN || null;
-
-// Debug simplificado - Token do Vercel funcionando
-if (FIPE_TOKEN) {
-  console.log('🔑 FIPE Token carregado do Vercel com sucesso');
-}
 
 // Função para adicionar delay entre requisições (evitar erro 429)
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -74,16 +69,11 @@ const fetchWithRetry = async (url: string, maxRetries: number = 3): Promise<Resp
 
       if (FIPE_TOKEN) {
         headers['X-Subscription-Token'] = FIPE_TOKEN;
-        // Log reduzido - só em caso de erro
-      } else {
-        // Log reduzido - só em caso de erro
       }
 
-      if (attempt > 1) console.log(`🔄 Tentativa ${attempt}/${maxRetries} para: ${url}`);
       const response = await fetch(url, { headers });
 
       if (response.ok) {
-        if (attempt > 1) console.log(`✅ Sucesso na tentativa ${attempt}`);
         return response;
       }
 
@@ -91,7 +81,6 @@ const fetchWithRetry = async (url: string, maxRetries: number = 3): Promise<Resp
         const message = FIPE_TOKEN
           ? `Rate limit atingido mesmo com token na tentativa ${attempt}`
           : `Rate limit (sem token) na tentativa ${attempt}`;
-        console.warn(`⚠️ ${message}. Aguardando...`);
 
         if (attempt === maxRetries) {
           const errorMsg = FIPE_TOKEN
@@ -109,56 +98,13 @@ const fetchWithRetry = async (url: string, maxRetries: number = 3): Promise<Resp
       if (attempt === maxRetries) {
         throw error;
       }
-      console.warn(`❌ Erro na tentativa ${attempt}:`, error);
+      // Nas demais tentativas, apenas repete silenciosamente
     }
   }
 
   throw new Error('Falha após todas as tentativas');
 };
 
-export const testFipeConnection = async (): Promise<boolean> => {
-  try {
-    console.log('🧪 Testando conectividade com API FIPE v2...');
-
-    // Log do token (agora funcionando via Vercel)
-    if (FIPE_TOKEN) {
-      console.log(`🔑 FIPE Token ativo (Vercel) - ${FIPE_TOKEN.length} chars`);
-    }
-
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json'
-    };
-
-    if (FIPE_TOKEN) {
-      headers['X-Subscription-Token'] = FIPE_TOKEN;
-      console.log('🔑 Testando com token de autenticação...');
-    } else {
-      console.log('⚠️ Testando sem token (limite gratuito)...');
-    }
-
-    const response = await fetch(`${FIPE_API_BASE_URL}/cars/brands`, { headers });
-    console.log('📡 Status do teste:', response.status);
-
-    if (response.ok) {
-      const data = await response.json();
-      const tokenStatus = FIPE_TOKEN ? 'com token (1000 req/dia)' : 'sem token (500 req/dia)';
-      console.log(`✅ API FIPE v2 funcionando ${tokenStatus}! Marcas encontradas:`, data?.length || 0);
-      return true;
-    } else if (response.status === 429) {
-      const message = FIPE_TOKEN
-        ? 'Limite atingido mesmo com token'
-        : 'Limite gratuito atingido - configure um token';
-      console.warn(`⚠️ API FIPE: ${message} (429).`);
-      return false;
-    } else {
-      console.error('❌ API FIPE não está respondendo corretamente. Status:', response.status);
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ Erro de conectividade com API FIPE:', error);
-    return false;
-  }
-};
 
 export const fetchBrands = async (vehicleType: 'carros' | 'motos' | 'caminhoes'): Promise<Brand[]> => {
   try {
@@ -175,7 +121,6 @@ export const fetchBrands = async (vehicleType: 'carros' | 'motos' | 'caminhoes')
       codigo: item.code
     }));
   } catch (error) {
-    console.error('❌ Erro ao buscar marcas:', error);
     throw new Error('Falha ao buscar as marcas. Verifique sua conexão ou tente novamente em alguns minutos.');
   }
 };
@@ -200,7 +145,6 @@ export const fetchModels = async (
       codigo: item.code
     }));
   } catch (error) {
-    console.error('❌ Erro ao buscar modelos:', error);
     throw new Error('Falha ao buscar os modelos. Verifique sua conexão ou tente novamente em alguns minutos.');
   }
 };
@@ -226,7 +170,6 @@ export const fetchYears = async (
       codigo: item.code
     }));
   } catch (error) {
-    console.error('❌ Erro ao buscar anos:', error);
     throw new Error('Falha ao buscar os anos. Verifique sua conexão ou tente novamente em alguns minutos.');
   }
 };
@@ -260,7 +203,6 @@ export const fetchVehicleDetails = async (
       SiglaCombustivel: data.fuelAcronym
     };
   } catch (error) {
-    console.error('❌ Erro ao buscar detalhes do veículo:', error);
     throw new Error('Falha ao buscar os detalhes do veículo. Verifique sua conexão ou tente novamente em alguns minutos.');
   }
 };

@@ -16,7 +16,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { fetchBrands, fetchModels, fetchYears, fetchVehicleDetails, testFipeConnection, Brand, Model, Year, VehicleDetails } from '@/lib/utils';
+import { fetchBrands, fetchModels, fetchYears, fetchVehicleDetails, Brand, Model, Year, VehicleDetails } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Terminal } from 'lucide-react';
@@ -1023,7 +1023,7 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
               });
 
             } catch (error) {
-              console.error('Erro ao carregar dados FIPE iniciais:', error);
+              // Erros iniciais da FIPE serão tratados nos fluxos normais de busca
             }
           };
 
@@ -1037,13 +1037,6 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
   const brandCode = form.watch('brand');
   const modelCode = form.watch('model');
   const yearCode = form.watch('modelYear'); // Changed from manufactureYear
-
-  // Teste de conectividade com API FIPE v2
-  useEffect(() => {
-    testFipeConnection();
-  }, []);
-
-
 
   // Fetch Brands
   useEffect(() => {
@@ -1059,7 +1052,6 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
           setFipeApiError(null); // Limpar erro se sucesso
         })
         .catch(err => {
-          console.error('❌ Erro ao buscar marcas:', err);
           setFipeApiError(err.message || 'Erro ao conectar com a API FIPE');
           toast({
             title: 'Erro FIPE',
@@ -1126,7 +1118,6 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
           }
         })
         .catch(err => {
-          console.error('❌ Erro ao buscar anos:', err);
           toast({
             title: 'Erro FIPE',
             description: `Não foi possível buscar os anos. ${err.message || 'Erro desconhecido'}`,
@@ -1183,10 +1174,6 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
 
   const handleSubmitWithValidation = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    console.log("🚀 handleSubmitWithValidation CHAMADO!");
-    console.log("📝 initialData existe?", !!initialData);
-    console.log("📝 Dados do formulário:", form.getValues());
 
     // Validação básica dos campos obrigatórios (para NOVA e EDIÇÃO)
     let hasErrors = false;
@@ -1413,20 +1400,15 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
     // Se passou na validação
     if (initialData) {
       // Para edição: chamar handleFormSubmit diretamente (sem schema Zod)
-      console.log("🔄 Modo edição: chamando handleFormSubmit diretamente após validação");
       const values = form.getValues();
       await handleFormSubmit(values as any);
     } else {
       // Para nova proposta: usar validação completa do schema Zod
-      console.log("🆕 Modo criação: usando validação completa do schema Zod");
       form.handleSubmit(handleFormSubmit)();
     }
   };
 
   async function handleFormSubmit(values: z.infer<typeof formSchema>) {
-    console.log("🎯 handleFormSubmit CHAMADO!");
-    console.log("📦 Values recebidos:", values);
-
     setIsSubmitting(true);
 
     try {
@@ -1440,15 +1422,10 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
         modelName: selectedModel?.nome || modelName || '',
       };
 
-      console.log("📤 Chamando onSubmit com:", submissionValues);
-
       // Aguarda a conclusão da operação
       await onSubmit(submissionValues);
 
-      console.log("✅ onSubmit completado com sucesso!");
-
     } catch (error) {
-      console.error('❌ Error in form submission:', error);
       toast({
         title: "Erro",
         description: "Ocorreu um erro ao processar a proposta.",
@@ -1456,7 +1433,6 @@ export function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
       });
     } finally {
       setIsSubmitting(false);
-      console.log("🏁 handleFormSubmit finalizado");
     }
   }
 
