@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   title: 'Grupo Inova Financeira - Gerenciador de Propostas',
   description: 'Sistema de gerenciamento de propostas de veículos - Grupo Inova Financeira',
   icons: {
-    icon: '/logo.png',
-    shortcut: '/logo.png',
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
     apple: '/logo.png',
   },
 }
